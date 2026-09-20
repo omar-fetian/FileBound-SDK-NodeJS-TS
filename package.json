@@ -1,0 +1,19 @@
+{
+  "name": "filebound-sdk",
+  "version": "0.1.0",
+  "description": "A small, typed Node.js SDK for the FileBound Web API.",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx examples/quickstart.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.3"
+  }
+}
