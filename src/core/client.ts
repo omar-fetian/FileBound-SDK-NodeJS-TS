@@ -4,6 +4,7 @@ import { BasicAuthStrategy } from "./auth/basic-auth.js";
 import { GuidSessionStrategy } from "./auth/guid-session.js";
 import { ProjectsResource } from "../resources/projects.js";
 import { FilesResource } from "../resources/files.js";
+import { DocumentsResource } from "../resources/documents.js";
 
 export type AuthMode = "basic" | "guid";
 
@@ -34,6 +35,7 @@ export class FileBoundClient {
   readonly projects: ProjectsResource;
   readonly files: FilesResource;
   private readonly auth: AuthStrategy;
+  readonly documents: DocumentsResource;
 
   constructor(opts: FileBoundClientOptions) {
     // Normalize: strip trailing slashes so we never produce "//api/...".
@@ -41,6 +43,7 @@ export class FileBoundClient {
     this.transport = new Transport(opts.transport);
     this.projects = new ProjectsResource(this);
     this.files = new FilesResource(this);
+    this.documents = new DocumentsResource(this);
 
     const mode: AuthMode = opts.authMode ?? "guid";
     this.auth =
@@ -72,6 +75,38 @@ export class FileBoundClient {
     }
 
     return this.transport.json<T>(method, url, init);
+  }
+
+  /**
+   * Like request(), but returns raw bytes instead of parsed JSON.
+   * Used by endpoints that return a binary body
+   * (e.g. GET /documentBinaryData/{id}, GET /documents/{id}/rendition).
+   */
+  async requestBytes(
+    method: string,
+    path: string,
+    headers: Record<string, string> = {},
+  ): Promise<Buffer> {
+    const url0 = `${this.baseUrl}/api${path}`;
+    const applied = await this.auth.apply(url0);
+    return this.transport.bytes(method, applied.url, {
+      headers: { ...applied.headers, ...headers },
+    });
+  }
+
+  /**
+   * Like request(), but sends a multipart/form-data body.
+   * Used by upload endpoints that expect file bytes as form fields.
+   */
+  async requestMultipart<T = unknown>(
+    method: string,
+    path: string,
+    form: FormData,
+  ): Promise<T> {
+    const url0 = `${this.baseUrl}/api${path}`;
+    const { url, headers } = await this.auth.apply(url0);
+    // Auth headers only; fetch will set Content-Type with the boundary.
+    return this.transport.multipart<T>(method, url, form, headers);
   }
 
   // ---- Convenience methods -------------------------------------------------

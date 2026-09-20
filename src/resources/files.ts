@@ -1,11 +1,11 @@
-import { buildFilter, type RangeOptions } from "../query/filter.js";
+import { buildFilter, type FilterInput, type RangeOptions } from '../query/filter.js';
 import type { FileBoundClient } from "../core/client.js";
 import type { CreateFileInput, File } from "../models/file.js";
 import { paginate } from "../query/pagination.js";
 
 export interface ListFilesOptions extends RangeOptions {
   /** Raw FileBound filter, e.g. "projectid_1237,status_1". */
-  filter?: string;
+  filter?: FilterInput;
 }
 
 /**

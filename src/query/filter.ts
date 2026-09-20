@@ -1,39 +1,68 @@
 /**
- * Options for paginated list calls.
- * FileBound treats RangeBegin/RangeLength as FILTER properties,
- * not as separate query-string params. So they get merged into the
- * `filter=...` string like any other property: `RangeBegin_1,RangeLength_50`.
+ * FileBound filter strings look like:
+ *   key1_value1,key2_value2,...
  *
- * Ranges are 1-based: RangeBegin_1 = start from the first record.
+ * Rules we've verified from FileBound's own Help section:
+ *   - Underscore (`_`) separates key from value.
+ *   - Comma (`,`) separates properties.
+ *   - A comma INSIDE a value must be escaped as `\,`.
+ *   - Spaces must NOT be URL-encoded (the docs' own example says
+ *     `Project%20ABC` returns 404; send `Project ABC` instead).
+ *   - RangeBegin/RangeLength are FILTER properties, not query params,
+ *     and are required by /files and /projects when filtering (we proved
+ *     that by hand: ?filter=projectid_1246,RangeBegin_1,RangeLength_50
+ *     works; ?filter=projectid_1246 alone returns HTTP 500).
  */
+
 export interface RangeOptions {
   rangeBegin?: number;
   rangeLength?: number;
 }
 
 /**
- * Merge a raw filter string with range parameters into one filter string.
- * - If nothing is provided, returns undefined (no filter query param).
- * - If only ranges are provided, returns "RangeBegin_X,RangeLength_Y".
- * - If both, they are joined with a comma.
+ * A filter can be given as a raw string (escape hatch) or as an object
+ * of key/value pairs (friendly form).
+ */
+export type FilterInput =
+  | string
+  | Record<string, string | number | boolean | undefined>;
+
+/**
+ * Merge a filter (string OR object) with range options into one
+ * FileBound filter string.
  *
- * Note on encoding: we intentionally do NOT encode the commas or spaces.
- * FileBound's docs explicitly warn against URL-encoding spaces in filters,
- * and the raw comma is the structural separator between properties.
- * Callers are responsible for escaping commas that appear *inside* a value
- * (use "\," per FileBound's own Help section).
+ * Returns undefined when there is nothing to filter on.
  */
 export function buildFilter(
-  filter: string | undefined,
-  ranges: RangeOptions,
+  filter: FilterInput | undefined,
+  ranges: RangeOptions = {},
 ): string | undefined {
   const parts: string[] = [];
 
-  if (filter && filter.length > 0) parts.push(filter);
-  if (ranges.rangeBegin !== undefined)
+  if (typeof filter === "string") {
+    if (filter.length > 0) parts.push(filter);
+  } else if (filter && typeof filter === "object") {
+    for (const [key, value] of Object.entries(filter)) {
+      if (value === undefined) continue;
+      parts.push(`${key}_${escapeValue(String(value))}`);
+    }
+  }
+
+  if (ranges.rangeBegin !== undefined) {
     parts.push(`RangeBegin_${ranges.rangeBegin}`);
-  if (ranges.rangeLength !== undefined)
+  }
+  if (ranges.rangeLength !== undefined) {
     parts.push(`RangeLength_${ranges.rangeLength}`);
+  }
 
   return parts.length > 0 ? parts.join(",") : undefined;
+}
+
+/**
+ * Escape a value so it survives FileBound's filter parser.
+ * Only commas are special *inside* a value. We deliberately do NOT
+ * URL-encode anything - see the module docblock above.
+ */
+function escapeValue(value: string): string {
+  return value.replace(/,/g, "\\,");
 }

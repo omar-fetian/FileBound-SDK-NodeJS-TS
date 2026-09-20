@@ -1,10 +1,15 @@
 import type { FileBoundClient } from "../core/client.js";
 import type { Project } from "../models/project.js";
-import { buildFilter, type RangeOptions } from "../query/filter.js";
+import {
+  buildFilter,
+  type FilterInput,
+  type RangeOptions,
+} from "../query/filter.js";
+import { paginate } from "../query/pagination.js";
 
 /** Options accepted by list-style methods. */
 export interface ListProjectsOptions extends RangeOptions {
-  filter?: string;
+  filter?: FilterInput;
 }
 
 /**
@@ -25,6 +30,16 @@ export class ProjectsResource {
     const filter = buildFilter(opts.filter, opts);
     const query = filter ? `?filter=${filter}` : "";
     return this.client.get<Project[]>(`/projects${query}`);
+  }
+
+  async *paginate(
+    opts: ListProjectsOptions & { pageSize?: number } = {},
+  ): AsyncGenerator<Project> {
+    const { pageSize = 100, ...rest } = opts;
+    yield* paginate<Project>(
+      (range) => this.list({ ...rest, ...range }),
+      pageSize,
+    );
   }
 
   /** GET /api/projects/{id} - one project, or throws if not found. */

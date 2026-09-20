@@ -1,14 +1,11 @@
 import type { RangeOptions } from "./filter.js";
 
 /**
- * Fetch every page and yield items one at a time.
+ * Generic paginated iterator.
  *
- * `fetchPage` is a callback the resource supplies. Pagination doesn't
- * know about URLs, filters, or FileBound auth - it just keeps asking
- * for the next page until an empty page comes back.
- *
- * FileBound gives us no total count on list endpoints, so "empty page"
- * is the only reliable stop condition.
+ * FileBound gives us no "total count" on list endpoints, so we keep
+ * requesting pages until one comes back empty. `fetchPage` is supplied
+ * by each resource so this module stays endpoint-agnostic.
  */
 export async function* paginate<T>(
   fetchPage: (range: {
