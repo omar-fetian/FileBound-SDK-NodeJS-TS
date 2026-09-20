@@ -1,11 +1,6 @@
 # FileBound SDK (Node.js / TypeScript)
 
-A small, typed Node.js SDK for the [FileBound Web API](https://ofetian.filebound.com/api).
-
-Built module-by-module, tested against a live FileBound v9.0.4.0 site,
-and documented honestly — including the places where FileBound's own
-API reference and the live server disagree.
-
+A small, typed Node.js SDK for the [FileBound Web API](https://ofetian.filebound.com/api/documentation).
 ---
 
 ## Status
@@ -20,9 +15,6 @@ and stable:
 | `documents` | list, listByFile, get, getBinary, create, update, delete, addComment, listComments, group, ungroup, upload (multipart), getRendition, paginate |
 
 Authentication (GUID + Basic), filtering, and pagination are complete.
-
-**Not yet implemented:** `routes`, `routedItems`, `routeSteps`,
-`assignments`, `users`, `groups`, `reports`, `eforms`.
 
 ---
 
@@ -44,7 +36,7 @@ Requires **Node 18+** (uses the built-in `fetch`, `FormData`, and
 Create `.env` in the project root:
 
 ```env
-FILEBOUND_CLOUD_OFETIAN_BASE_URL=https://ofetian.filebound.com
+FILEBOUND_CLOUD_OFETIAN_BASE_URL=https://{Your FB Cloud Site URL}
 FILEBOUND_CLOUD_OFETIAN_USERNAME=your.username
 FILEBOUND_CLOUD_OFETIAN_PASSWORD=your-password
 FILEBOUND_CLOUD_OFETIAN_AUTH_MODE=guid
