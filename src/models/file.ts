@@ -11,6 +11,7 @@ export interface File {
   fileId: number; // usually equal to `id`
   projectId: number;
   projectName: string;
+  objectType: number;
 
   // Index values - THE important part of FileBound
   // field[0] is a placeholder; field[1] is field 1's value, etc.

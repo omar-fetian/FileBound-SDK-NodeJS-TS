@@ -1,12 +1,9 @@
 import type { FileBoundClient } from "../core/client.js";
 import type { Project } from "../models/project.js";
+import { buildFilter, type RangeOptions } from "../query/filter.js";
 
 /** Options accepted by list-style methods. */
-export interface ListProjectsOptions {
-  /**
-   * Raw FileBound filter string, e.g. "name_Invoices" or "groupid_2,userid_3".
-   * A friendlier object form will be added on top in a later step.
-   */
+export interface ListProjectsOptions extends RangeOptions {
   filter?: string;
 }
 
@@ -25,9 +22,8 @@ export class ProjectsResource {
 
   /** GET /api/projects - all projects the current user can see. */
   async list(opts: ListProjectsOptions = {}): Promise<Project[]> {
-    const query = opts.filter
-      ? `?filter=${encodeURIComponent(opts.filter)}`
-      : "";
+    const filter = buildFilter(opts.filter, opts);
+    const query = filter ? `?filter=${filter}` : "";
     return this.client.get<Project[]>(`/projects${query}`);
   }
 

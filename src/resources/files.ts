@@ -1,7 +1,9 @@
+import { buildFilter, type RangeOptions } from "../query/filter.js";
 import type { FileBoundClient } from "../core/client.js";
 import type { CreateFileInput, File } from "../models/file.js";
+import { paginate } from "../query/pagination.js";
 
-export interface ListFilesOptions {
+export interface ListFilesOptions extends RangeOptions {
   /** Raw FileBound filter, e.g. "projectid_1237,status_1". */
   filter?: string;
 }
@@ -16,13 +18,38 @@ export interface ListFilesOptions {
 export class FilesResource {
   constructor(private readonly client: FileBoundClient) {}
 
+  /**
+   * GET /api/files - files the current user can see.
+   *
+   * FileBound's /files endpoint requires RangeBegin/RangeLength for
+   * some filters (notably `projectid_X`) or it returns HTTP 500
+   * "unsupported File data request". Pass them here.
+   *
+   * Example:
+   *   client.files.list({
+   *     filter: 'projectid_1246',
+   *     rangeBegin: 1,
+   *     rangeLength: 50,
+   *   })
+   * builds: /api/files?filter=projectid_1246,RangeBegin_1,RangeLength_50
+   */
+
+  async *paginate(
+    opts: ListFilesOptions & { pageSize?: number } = {},
+  ): AsyncGenerator<File> {
+    const { pageSize = 100, ...rest } = opts;
+    yield* paginate<File>(
+      (range) => this.list({ ...rest, ...range }),
+      pageSize,
+    );
+  }
+
   // ---- Reads --------------------------------------------------------------
 
   /** GET /api/files - all files the current user can see. */
   async list(opts: ListFilesOptions = {}): Promise<File[]> {
-    const query = opts.filter
-      ? `?filter=${encodeURIComponent(opts.filter)}`
-      : "";
+    const filter = buildFilter(opts.filter, opts);
+    const query = filter ? `?filter=${filter}` : "";
     return this.client.get<File[]>(`/files${query}`);
   }
 
@@ -51,5 +78,16 @@ export class FilesResource {
    */
   async create(input: CreateFileInput): Promise<File> {
     return this.client.put<File>("/files", input);
+  }
+
+  /**
+   * Convenience: list files in one project with sensible default paging.
+   * This is the "always works" path for the common case.
+   */
+  async listByProject(
+    projectId: number,
+    opts: RangeOptions = { rangeBegin: 1, rangeLength: 100 },
+  ): Promise<File[]> {
+    return this.list({ filter: `projectid_${projectId}`, ...opts });
   }
 }
