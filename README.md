@@ -1,7 +1,6 @@
 # FileBound SDK (Node.js / TypeScript)
 
-A small, typed Node.js SDK for the [FileBound Web API](https://ofetian.filebound.com/api/documentation).
----
+## A small, typed Node.js SDK for the [FileBound Web API](https://services.filebound.com/api/documentation).
 
 ## Status
 
